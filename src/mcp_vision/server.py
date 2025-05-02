@@ -2,24 +2,23 @@ import time
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
-from transformers import pipeline
+from transformers import pipeline, PretrainedConfig
 
 
 DEFAULT_OBJDET_MODEL = "google/owlvit-base-patch32"
 
-global objdet_model
-objdet_model = None
+global models
+models = {}
+
 
 mcp = FastMCP("mcp-vision")
 
 
-# TODO: cache instead of using global
 def load_hf_objdet_pipeline(model_name: str, device: str = "cpu"):
-    global objdet_model
     start = time.time()
     objdet_model = pipeline(task="zero-shot-object-detection", model=model_name)
     print(f"Loaded zero-shot object detection pipline for {model_name} in {time.time() - start:.2f} seconds.")
-    return objdet_model
+    return {"model_name": model_name, "model": objdet_model}
 
 
 def locate_object_bboxes(image_path: str, candidate_labels: list[str]) -> list[dict[str, Any]] | None:
@@ -34,7 +33,8 @@ def locate_object_bboxes(image_path: str, candidate_labels: list[str]) -> list[d
     :param image_path: local path or URL to image
     :param candidate_labels: list of candidate object labels as strings
     """
-    global objdet_model 
+    global models
+    objdet_model = models["object_detection"]["model"]
     try:
         return objdet_model(image_path, candidate_labels=candidate_labels)
     except Exception as e:
@@ -42,7 +42,6 @@ def locate_object_bboxes(image_path: str, candidate_labels: list[str]) -> list[d
         return None
 
 
-# TODO: cache instead of using global, add filtering by object name?
 @mcp.tool()
 def locate_objects(image_path: str, candidate_labels: list[str], hf_model: str | None = None) -> str:
     """Detect, find and/or locate objects in the image found at image_path.
@@ -52,12 +51,24 @@ def locate_objects(image_path: str, candidate_labels: list[str], hf_model: str |
         candidate_labels: list of candidate object labels as strings
         hf_model (optional): huggingface zero-shot object detection model (default = "google/owlvit-base-patch32")
     """
-    global objdet_model
+    global models
 
-    if objdet_model is None:
-        if hf_model is None:
-            hf_model = DEFAULT_OBJDET_MODEL
-        objdet_model = load_hf_objdet_pipeline(model_name=hf_model)
+    if hf_model is None:
+        hf_model = DEFAULT_OBJDET_MODEL
+
+    objdet_config = models.get("object_detection", None)
+    if not objdet_config:
+        print("First time loading an object detection model")
+        objdet_config = load_hf_objdet_pipeline(model_name=hf_model)
+        models["object_detection"] = objdet_config
+
+    objdet_model_name = objdet_config.get("model_name", None)    
+    objdet_model = objdet_config.get("model", None)
+
+    if not objdet_model_name or not objdet_model or objdet_model_name != hf_model:
+        print(f"No object detection model exists for {hf_model=} (existing {objdet_model_name=}), reloading")
+        objdet_config = load_hf_objdet_pipeline(model_name=hf_model)
+        models["object_detection"] = objdet_config
 
     bboxes = locate_object_bboxes(image_path, candidate_labels=candidate_labels)
     if not bboxes or len(bboxes) == 0:
