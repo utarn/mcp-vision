@@ -2,11 +2,13 @@ import time
 from typing import Any
 import base64
 from io import BytesIO
+import io
 import requests
 import logging
 import sys
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import Image as McpImage
 from transformers import pipeline, PretrainedConfig
 from PIL import Image
 
@@ -81,6 +83,31 @@ def init_objdet_pipeline(hf_model: str | None = None) -> None:
         models["object_detection"] = objdet_config
 
 
+def to_mcp_image(image: Image.Image | bytes, format: str = "jpeg") -> McpImage:
+    """
+    Convert a PIL Image object or bytes to an MCP Image.
+
+    Args:
+        image: PIL Image object or bytes containing image data
+        format: Format to save the image in (default is "jpeg")
+
+    Returns:
+        MCP Image object with specified format
+    """
+    if isinstance(image, io.BufferedReader):
+        image_bytes = image.read()
+    elif isinstance(image, bytes):
+        image_bytes = image
+    elif isinstance(image, Image.Image):
+        img_byte_arr = io.BytesIO()
+        image.save(img_byte_arr, format=format)
+        image_bytes = img_byte_arr.getvalue()
+    else:
+        raise ValueError("Invalid image type. Expected PIL Image or bytes.")
+
+    return McpImage(data=image_bytes, format=format)
+
+
 @mcp.tool()
 def locate_objects(image_path: str, candidate_labels: list[str], hf_model: str | None = None) -> str:
     """Detect, find and/or locate objects in the image found at image_path.
@@ -128,9 +155,4 @@ def zoom_to_object(image_path: str, label: str, hf_model: str | None = None) -> 
 
     crop = image.crop((left, top, right, bottom))
 
-    crop_base64 = pil_to_base64(crop)
-    if len(crop_base64) > 500 * 1024:
-        print(f"Crop is too large, max allowed 500KB, got {len(crop_base64)}")
-        return None
-
-    return crop_base64
+    return to_mcp_image(crop)
