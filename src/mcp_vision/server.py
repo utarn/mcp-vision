@@ -1,16 +1,16 @@
 import time
 from typing import Any
-import base64
-from io import BytesIO
-import io
 import requests
+from contextlib import asynccontextmanager
 import logging
-import sys
 
 from mcp.server.fastmcp import FastMCP
-from mcp.server.fastmcp import Image as McpImage
-from transformers import pipeline, PretrainedConfig
-from PIL import Image
+from transformers import pipeline
+from PIL import Image as PILImage
+
+from mcp_vision.utils import to_mcp_image
+
+logger = logging.getLogger(__name__)
 
 
 DEFAULT_OBJDET_MODEL = "google/owlvit-large-patch14"
@@ -19,24 +19,31 @@ global models
 models = {}
 
 
-mcp = FastMCP("mcp-vision")
+@asynccontextmanager
+async def app_lifespan(server: FastMCP):
+    """Manage application lifecycle with type-safe context"""
+    logger.info("Starting up MCP-vision server and loading the pipeline(s), this may take a few minutes...")
+    try:
+        # initialize global object detection pipeline on startup to make things go faster
+        init_objdet_pipeline()
+    except Exception as e:
+        logger.error(f"Failed to initialize object detection pipeline: {e}")
+        raise e
+
+    logger.info("MCP-vision server has started, listening for requests...")
+    yield
 
 
-def pil_to_base64(image: Image.Image) -> str:
-    buffered = BytesIO()
-    image.save(buffered, format="JPEG")
-    img_str = base64.b64encode(buffered.getvalue())
-    return img_str
-
-
-def base64_to_pil(data_base64: str) -> Image.Image:
-    image = Image.open(BytesIO(base64.b64decode(data_base64)))
-    return image
+mcp = FastMCP(
+    "mcp-vision",
+    lifespan=app_lifespan,
+    description="MCP-vision server",
+)
 
 
 def load_hf_objdet_pipeline(model_name: str, device: str = "cpu"):
     start = time.time()
-    objdet_model = pipeline(task="zero-shot-object-detection", model=model_name)
+    objdet_model = pipeline(task="zero-shot-object-detection", model=model_name, device=device, use_fast=True)
     print(f"Loaded zero-shot object detection pipline for {model_name} in {time.time() - start:.2f} seconds.")
     return {"model_name": model_name, "model": objdet_model}
 
@@ -83,31 +90,6 @@ def init_objdet_pipeline(hf_model: str | None = None) -> None:
         models["object_detection"] = objdet_config
 
 
-def to_mcp_image(image: Image.Image | bytes, format: str = "jpeg") -> McpImage:
-    """
-    Convert a PIL Image object or bytes to an MCP Image.
-
-    Args:
-        image: PIL Image object or bytes containing image data
-        format: Format to save the image in (default is "jpeg")
-
-    Returns:
-        MCP Image object with specified format
-    """
-    if isinstance(image, io.BufferedReader):
-        image_bytes = image.read()
-    elif isinstance(image, bytes):
-        image_bytes = image
-    elif isinstance(image, Image.Image):
-        img_byte_arr = io.BytesIO()
-        image.save(img_byte_arr, format=format)
-        image_bytes = img_byte_arr.getvalue()
-    else:
-        raise ValueError("Invalid image type. Expected PIL Image or bytes.")
-
-    return McpImage(data=image_bytes, format=format)
-
-
 @mcp.tool()
 def locate_objects(image_path: str, candidate_labels: list[str], hf_model: str | None = None) -> str:
     """Detect, find and/or locate objects in the image found at image_path.
@@ -151,7 +133,7 @@ def zoom_to_object(image_path: str, label: str, hf_model: str | None = None) -> 
     left, top, right, bottom = best_box["box"].values()
 
     # image = Image.open(image_path)
-    image = Image.open(requests.get(image_path, stream=True).raw)
+    image = PILImage.open(requests.get(image_path, stream=True).raw)
 
     crop = image.crop((left, top, right, bottom))
 
