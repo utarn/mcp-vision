@@ -41,7 +41,7 @@ mcp = FastMCP(
 )
 
 
-def load_hf_objdet_pipeline(model_name: str, device: str = "cpu"):
+def load_hf_objdet_pipeline(model_name: str, device: str | None = None):
     start = time.time()
     objdet_model = pipeline(task="zero-shot-object-detection", model=model_name, device=device, use_fast=True)
     print(f"Loaded zero-shot object detection pipline for {model_name} in {time.time() - start:.2f} seconds.")
