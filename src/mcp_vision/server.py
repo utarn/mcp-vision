@@ -4,7 +4,7 @@ import requests
 from contextlib import asynccontextmanager
 import logging
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP, MCPImage
 from transformers import pipeline
 from PIL import Image as PILImage
 
@@ -41,9 +41,9 @@ mcp = FastMCP(
 )
 
 
-def load_hf_objdet_pipeline(model_name: str, device: str | None = None):
+def load_hf_objdet_pipeline(model_name: str):
     start = time.time()
-    objdet_model = pipeline(task="zero-shot-object-detection", model=model_name, device=device, use_fast=True)
+    objdet_model = pipeline(task="zero-shot-object-detection", model=model_name)
     print(f"Loaded zero-shot object detection pipline for {model_name} in {time.time() - start:.2f} seconds.")
     return {"model_name": model_name, "model": objdet_model}
 
@@ -97,7 +97,7 @@ def locate_objects(image_path: str, candidate_labels: list[str], hf_model: str |
     Args:
         image_path: path to the image
         candidate_labels: list of candidate object labels as strings
-        hf_model (optional): huggingface zero-shot object detection model (default = "google/owlvit-base-patch32")
+        hf_model (optional): huggingface zero-shot object detection model (default = "google/owlvit-large-patch14")
     """
     init_objdet_pipeline(hf_model)
 
@@ -108,16 +108,15 @@ def locate_objects(image_path: str, candidate_labels: list[str], hf_model: str |
     return f"{len(bboxes)} objects were found in the image at the following locations: {bboxes}."
 
 
-# TODO: await requests result and make this async
 @mcp.tool()
-def zoom_to_object(image_path: str, label: str, hf_model: str | None = None) -> Any:
+def zoom_to_object(image_path: str, label: str, hf_model: str | None = None) -> MCPImage:
     """Zoom into an object in the image, allowing you to analyze it more closely. Crop image to the object bounding box and return the cropped image. 
     If many objects are present in the image, will return the 'best' one as represented by object score. 
 
     Args:
-        image_path: path to the imamge
+        image_path: path to the image
         label: object label to find and crop to
-        hf_model (optional): huggingface zero-shot object detection model (default = "google/owlvit-base-pathch32")
+        hf_model (optional): huggingface zero-shot object detection model (default = "google/owlvit-large-patch14")
     """
     init_objdet_pipeline(hf_model)
 
@@ -125,14 +124,13 @@ def zoom_to_object(image_path: str, label: str, hf_model: str | None = None) -> 
     if not bboxes or len(bboxes) == 0:
         return None
     
-    bboxes = sorted(bboxes, key=lambda x: x["score"], reverse=True) # this may be superfluous as hf models return in this order already
+    bboxes = sorted(bboxes, key=lambda x: x["score"], reverse=True)
     if not bboxes or len(bboxes) == 0:
         return None
     
     best_box = bboxes[0]
     left, top, right, bottom = best_box["box"].values()
 
-    # image = Image.open(image_path)
     image = PILImage.open(requests.get(image_path, stream=True).raw)
 
     crop = image.crop((left, top, right, bottom))
