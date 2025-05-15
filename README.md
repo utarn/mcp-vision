@@ -25,7 +25,7 @@ Add this to your claude_desktop_config.json:
 "mcpServers": {
   "mcp-vision": {
     "command": "docker",
-    "args": ["run", "-i", "--rm", "mcp-vision"],
+    "args": ["run", "-i", "--rm", "--runtime=nvidia", "--gpus", "all", "mcp-vision"],
 	"env": {}
   }
 }
