@@ -1,7 +1,7 @@
 [project]
 name = "mcp-vision"
-version = "0.1.0"
-description = "Allow LLMs to call dedicated specialist CV models"
+version = "0.1.1"
+description = "Allow VLMs to call dedicated specialist CV models"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "Groundlight AI" }]

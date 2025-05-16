@@ -1,20 +1,47 @@
 import time
 from typing import Any
+import requests
+from contextlib import asynccontextmanager
+import logging
 
-from mcp.server.fastmcp import FastMCP
-from transformers import pipeline, PretrainedConfig
+from mcp.server.fastmcp import FastMCP, MCPImage
+from transformers import pipeline
+from PIL import Image as PILImage
+
+from mcp_vision.utils import to_mcp_image
+
+logger = logging.getLogger(__name__)
 
 
-DEFAULT_OBJDET_MODEL = "google/owlvit-base-patch32"
+DEFAULT_OBJDET_MODEL = "google/owlvit-large-patch14"
 
 global models
 models = {}
 
 
-mcp = FastMCP("mcp-vision")
+@asynccontextmanager
+async def app_lifespan(server: FastMCP):
+    """Manage application lifecycle with type-safe context"""
+    logger.info("Starting up MCP-vision server and loading the pipeline(s), this may take a few minutes...")
+    try:
+        # initialize global object detection pipeline on startup to make things go faster
+        init_objdet_pipeline()
+    except Exception as e:
+        logger.error(f"Failed to initialize object detection pipeline: {e}")
+        raise e
+
+    logger.info("MCP-vision server has started, listening for requests...")
+    yield
 
 
-def load_hf_objdet_pipeline(model_name: str, device: str = "cpu"):
+mcp = FastMCP(
+    "mcp-vision",
+    lifespan=app_lifespan,
+    description="MCP-vision server",
+)
+
+
+def load_hf_objdet_pipeline(model_name: str):
     start = time.time()
     objdet_model = pipeline(task="zero-shot-object-detection", model=model_name)
     print(f"Loaded zero-shot object detection pipline for {model_name} in {time.time() - start:.2f} seconds.")
@@ -42,15 +69,7 @@ def locate_object_bboxes(image_path: str, candidate_labels: list[str]) -> list[d
         return None
 
 
-@mcp.tool()
-def locate_objects(image_path: str, candidate_labels: list[str], hf_model: str | None = None) -> str:
-    """Detect, find and/or locate objects in the image found at image_path.
-
-    Args:
-        image_path: path to the image
-        candidate_labels: list of candidate object labels as strings
-        hf_model (optional): huggingface zero-shot object detection model (default = "google/owlvit-base-patch32")
-    """
+def init_objdet_pipeline(hf_model: str | None = None) -> None:
     global models
 
     if hf_model is None:
@@ -70,9 +89,50 @@ def locate_objects(image_path: str, candidate_labels: list[str], hf_model: str |
         objdet_config = load_hf_objdet_pipeline(model_name=hf_model)
         models["object_detection"] = objdet_config
 
+
+@mcp.tool()
+def locate_objects(image_path: str, candidate_labels: list[str], hf_model: str | None = None) -> str:
+    """Detect, find and/or locate objects in the image found at image_path.
+
+    Args:
+        image_path: path to the image
+        candidate_labels: list of candidate object labels as strings
+        hf_model (optional): huggingface zero-shot object detection model (default = "google/owlvit-large-patch14")
+    """
+    init_objdet_pipeline(hf_model)
+
     bboxes = locate_object_bboxes(image_path, candidate_labels=candidate_labels)
     if not bboxes or len(bboxes) == 0:
         return f"No objects were located in the image."
 
     return f"{len(bboxes)} objects were found in the image at the following locations: {bboxes}."
 
+
+@mcp.tool()
+def zoom_to_object(image_path: str, label: str, hf_model: str | None = None) -> MCPImage:
+    """Zoom into an object in the image, allowing you to analyze it more closely. Crop image to the object bounding box and return the cropped image. 
+    If many objects are present in the image, will return the 'best' one as represented by object score. 
+
+    Args:
+        image_path: path to the image
+        label: object label to find and crop to
+        hf_model (optional): huggingface zero-shot object detection model (default = "google/owlvit-large-patch14")
+    """
+    init_objdet_pipeline(hf_model)
+
+    bboxes = locate_object_bboxes(image_path, candidate_labels=[label])
+    if not bboxes or len(bboxes) == 0:
+        return None
+    
+    bboxes = sorted(bboxes, key=lambda x: x["score"], reverse=True)
+    if not bboxes or len(bboxes) == 0:
+        return None
+    
+    best_box = bboxes[0]
+    left, top, right, bottom = best_box["box"].values()
+
+    image = PILImage.open(requests.get(image_path, stream=True).raw)
+
+    crop = image.crop((left, top, right, bottom))
+
+    return to_mcp_image(crop)
