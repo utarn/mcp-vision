@@ -120,6 +120,9 @@ make push-docker
 If Claude Desktop is failing to connect to `mcp-vision`:
 - Check the configuration is correct (CPU vs GPU)
 - Developer options may need to be enabled in Claude Desktop
-- Depending on the size of the model(s) used, give it a few minutes to download them from HuggingFace on first opening Claude Desktop. Once downloaded, the server will respond and Claude will connect
+- Depending on the size of the model(s) used, give it a few minutes to download them from HuggingFace on first opening Claude Desktop. Once downloaded, the server will respond and Claude will connect.
+
+# TODO
+- Host best models online instead of requiring local download
 
 
