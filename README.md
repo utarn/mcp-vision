@@ -14,10 +14,9 @@
 
 # mcp-vision by <img src="images/gl_logo.png" height=25>
 
-A Model Context Protocol (MCP) server for using HuggingFace computer vision models as tools for LLM use.
+A Model Context Protocol (MCP) server exposing HuggingFace computer vision models such as zero-shot object detection as tools, enhancing the vision capabilities of large language or vision-language models.
 
-This MCP server is still in early development. The functionality and available tools are subject to change and expansion. 
-See below for details of currently available tools.
+This repo is in active development. See below for details of currently available tools.
 
 ## Installation
 
@@ -88,6 +87,14 @@ The shop is a milk tea shop.
 ```
 The image is the first image in the V*Bench/GPT4V-hard dataset and can be found here: https://huggingface.co/datasets/craigwu/vstar_bench/blob/main/GPT4V-hard/0.JPG (use the download link). 
 
+<p align="center">
+<img src="images/claude_with_zoom_tool_large_font.webp">
+</p>
+
+Note: 
+- If you upload the image directly into the conversation with Claude instead of providing a download link, it will not be able to call the tools and will attempt to answer directly. 
+- On accounts that have web search enabled, Claude will prefer to use web search over local MCP tools AFAIK. Disable web search for best results. 
+
 ## Development
 
 Run locally using the <a href="https://github.com/astral-sh/uv">`uv`</a> package manager:
@@ -122,7 +129,9 @@ If Claude Desktop is failing to connect to `mcp-vision`:
 - Developer options may need to be enabled in Claude Desktop
 - Depending on the size of the model(s) used, give it a few minutes to download them from HuggingFace on first opening Claude Desktop. Once downloaded, the server will respond and Claude will connect.
 
+On accounts that have web search enabled, Claude will prefer to use web search over local MCP tools AFAIK. Disable web search for best results. 
+
 ## TODO
 - Host best models online instead of requiring local download
-
+- Add more tools
 
