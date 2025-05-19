@@ -56,7 +56,7 @@ Or, CPU only:
   }
 }
 ```
-When running on CPU, the default large-size object detection model make take a long time to run inference and respond. Consider using a smaller model as `DEFAULT_OBJDET_MODEL` (you can tell Claude directly to use a specific model too). 
+When running on CPU, the default large-size object detection model make take a long time to laod and run inference. Consider using a smaller model as `DEFAULT_OBJDET_MODEL` (you can tell Claude directly to use a specific model too). 
 
 ## Tools
 The following tools are currently available through the mcp-vision server:
@@ -114,5 +114,12 @@ make run-docker-gpu
 ```bash
 make push-docker
 ```
+
+## Troubleshooting
+
+If Claude Desktop is failing to connect to `mcp-vision`:
+- Check the configuration is correct (CPU vs GPU)
+- Developer options may need to be enabled in Claude Desktop
+- Depending on the size of the model(s) used, give it a few minutes to download them from HuggingFace on first opening Claude Desktop. Once downloaded, the server will respond and Claude will connect
 
 
