@@ -57,6 +57,17 @@ Or, CPU only:
 ```
 When running on CPU, the default large-size object detection model make take a long time to laod and run inference. Consider using a smaller model as `DEFAULT_OBJDET_MODEL` (you can tell Claude directly to use a specific model too). 
 
+**(Beta)** It is possible to run the public docker image directly without building locally, however the download time may interfere with Claude's loading of the server. 
+```json
+"mcpServers": {
+  "mcp-vision": {
+    "command": "docker",
+    "args": ["run", "-i", "--rm", "--runtime=nvidia", "--gpus", "all", "groundlight/mcp-vision:latest"],
+	"env": {}
+  }
+}
+```
+
 ## Tools
 The following tools are currently available through the mcp-vision server:
 
