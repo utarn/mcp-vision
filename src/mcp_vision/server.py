@@ -4,11 +4,11 @@ import requests
 from contextlib import asynccontextmanager
 import logging
 
-from mcp.server.fastmcp import FastMCP, MCPImage
+from mcp.server.fastmcp import FastMCP
 from transformers import pipeline
 from PIL import Image as PILImage
 
-from mcp_vision.utils import to_mcp_image
+from mcp_vision.utils import to_mcp_image, MCPImage
 
 logger = logging.getLogger(__name__)
 
