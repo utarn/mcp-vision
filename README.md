@@ -62,7 +62,7 @@ When running on CPU, the default large-size object detection model make take a l
 "mcpServers": {
   "mcp-vision": {
     "command": "docker",
-    "args": ["run", "-i", "--rm", "--runtime=nvidia", "--gpus", "all", "groundlight/mcp-vision:latest"],
+    "args": ["run", "-i", "--rm", "--runtime=nvidia", "--gpus", "all", "utarn/mcp-vision:latest"],
 	"env": {}
   }
 }

@@ -10,5 +10,5 @@ run-docker-gpu:  # Run the Docker container with NVIDIA GPU access
 	docker run -it --rm --runtime=nvidia --gpus all mcp-vision
 
 push-docker:  # Push the Docker image to the registry
-	docker tag mcp-vision groundlight/mcp-vision:latest
-	docker push groundlight/mcp-vision
+	docker tag mcp-vision utarn/mcp-vision:latest
+	docker push utarn/mcp-vision
