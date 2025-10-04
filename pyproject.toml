@@ -1,21 +1,23 @@
 [project]
 name = "mcp-vision"
 version = "0.1.1"
-description = "Allow VLMs to call dedicated specialist CV models"
+description = "Allow Easyocr to extract text from images and pdfs"
 readme = "README.md"
 requires-python = ">=3.11"
-authors = [{ name = "Groundlight AI" }]
+authors = [{ name = "Utharn Buranasaksee" }]
 license = { text = "MIT License" }
 dependencies = [
     "mcp[cli]>=1.6.0",
     "pillow>=11.2.1",
     "scipy>=1.15.2",
-    "torch>=2.7.0",
-    "transformers>=4.51.3",
+    "easyocr>=1.7.0",
+    "pymupdf>=1.24.0",
+    "requests>=2.31.0",
+    "fastmcp>=2.12.4",
 ]
 
 [project.optional-dependencies]
-dev = ["ruff>=0.7.3", "pytest>=8.0.0"]
+dev = ["ruff>=0.7.3", "pytest>=8.0.0", "pytest-asyncio>=0.21.0"]
 
 [project.scripts]
 mcp-vision = "mcp_vision:main"
@@ -24,5 +26,3 @@ mcp-vision = "mcp_vision:main"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.uv]
-dev-dependencies = ["ruff>=0.7.3", "pytest>=8.0.0"]

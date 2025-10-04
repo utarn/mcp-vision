@@ -72,8 +72,8 @@ When running on CPU, the default large-size object detection model make take a l
 The following tools are currently available through the mcp-vision server:
 
 1. **locate_objects**
-- Description: Detect and locate objects in an image using one of the zero-shot object detection pipelines available 
-through HuggingFace (list for reference [https://huggingface.co/models?pipeline_tag=zero-shot-object-detection&sort=trending]). 
+- Description: Detect and locate objects in an image using one of the zero-shot object detection pipelines available
+through HuggingFace (list for reference [https://huggingface.co/models?pipeline_tag=zero-shot-object-detection&sort=trending]).
 - Input: `image_path` (string) URL or file path, `candidate_labels` (list of strings) list of possible objects to detect, `hf_model` (optional string), will use `"google/owlvit-large-patch14"` by default, which could be slow on a non-GPU machine
 - Returns: List of dicts in HF object-detection format
 
@@ -81,6 +81,16 @@ through HuggingFace (list for reference [https://huggingface.co/models?pipeline_
 - Description: Zoom into an object in the image, allowing you to analyze it more closely. Crop image to the object bounding box and return the cropped image. If many objects are present in the image, will return the 'best' one as represented by object score.
 - Input: `image_path` (string) URL or file path, `label` (string) object label to find and zoom and crop to, `hf_model` (optional), will use `"google/owlvit-large-patch14"` by default, which could be slow on a non-GPU machine
 - Returns: MCPImage or None
+
+3. **read_text_from_image**
+- Description: Extract text from images using EasyOCR with support for multiple languages including English and Thai
+- Input: `image_path` (string) URL or file path, `languages` (optional list of language codes, default: ['en', 'th']), `min_confidence` (optional float, default: 0.0)
+- Returns: Extracted text as string
+
+4. **read_text_from_pdf**
+- Description: Extract text from PDF files by converting each page to an image and using EasyOCR
+- Input: `pdf_path` (string) URL or file path, `languages` (optional list of language codes, default: ['en', 'th']), `num_pages` (optional int, default: all pages), `min_confidence` (optional float, default: 0.0)
+- Returns: Concatenated text from all processed pages
 
 
 ## Example in blog post and video
@@ -105,6 +115,27 @@ The image is the first image in the V*Bench/GPT4V-hard dataset and can be found 
 Note: 
 - If you upload the image directly into the conversation with Claude instead of providing a download link, it will not be able to call the tools and will attempt to answer directly. 
 - On accounts that have web search enabled, Claude will prefer to use web search over local MCP tools AFAIK. Disable web search for best results. 
+
+## Testing OCR Functionality
+
+You can test the OCR functionality using the included test runner:
+
+```bash
+uv run test_runner.py
+```
+
+This will test:
+- English text extraction from images and PDFs
+- Thai language support with multiple confidence thresholds
+- Combined English + Thai text recognition
+
+### Thai Language Support
+
+The OCR tools include enhanced support for Thai language text extraction:
+- Uses EasyOCR with Thai language models
+- Configurable confidence thresholds to handle low-confidence Thai text recognition
+- Improved text extraction for both images and PDF documents
+- Default confidence threshold of 0.0 to capture all recognized text including low-confidence Thai characters
 
 ## Development
 

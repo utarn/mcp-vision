@@ -17,12 +17,28 @@ ADD . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-editable
 
+# Preload EasyOCR models during build to cache them in the image
+RUN --mount=type=cache,target=/root/.cache/easyocr \
+    python -c "
+import easyocr
+import numpy as np
+print('Downloading and caching EasyOCR models for English and Thai...')
+reader = easyocr.Reader(['en', 'th'])
+print('EasyOCR models downloaded successfully.')
+# Warm up the reader to ensure models are fully loaded
+dummy_image = np.zeros((100, 100, 3), dtype=np.uint8)
+reader.readtext(dummy_image)
+print('EasyOCR reader warmed up successfully.')
+"
+
 
 FROM python:3.12-slim-bookworm
 
 WORKDIR /app
 
 COPY --from=uv --chown=app:app /app/.venv /app/.venv
+# Copy EasyOCR model cache
+COPY --from=uv --chown=app:app /root/.cache/easyocr /root/.cache/easyocr
 
 ENV PATH="/app/.venv/bin:$PATH"
 
