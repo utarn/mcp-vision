@@ -3,13 +3,15 @@ from typing import Any
 from contextlib import asynccontextmanager
 import logging
 import os
+import sys
 import io
 import requests
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP, Context
 from PIL import Image as PILImage
 import easyocr
 import fitz  # PyMuPDF
+import numpy as np
 
 from mcp_vision.utils import to_mcp_image, MCPImage, load_image
 
@@ -54,7 +56,6 @@ def init_ocr_reader():
         
         # Warm up the reader with a dummy operation to ensure models are fully loaded
         try:
-            import numpy as np
             dummy_image = np.zeros((100, 100, 3), dtype=np.uint8)
             reader.readtext(dummy_image)
             print("EasyOCR reader warmed up successfully.")
@@ -89,7 +90,6 @@ def read_text_from_image(image_path: str, languages: list[str] = None, min_confi
         
         # Warm up the reader
         try:
-            import numpy as np
             dummy_image = np.zeros((100, 100, 3), dtype=np.uint8)
             reader.readtext(dummy_image)
             print("EasyOCR reader warmed up successfully.")
@@ -101,7 +101,6 @@ def read_text_from_image(image_path: str, languages: list[str] = None, min_confi
         pil_image = load_image(image_path)
         
         # Convert PIL Image to numpy array for EasyOCR
-        import numpy as np
         image_array = np.array(pil_image)
         
         # Extract text using EasyOCR with optimized parameters for Thai
@@ -164,7 +163,6 @@ def read_text_from_pdf(pdf_path: str, languages: list[str] = None, num_pages: in
         
         # Warm up the reader
         try:
-            import numpy as np
             dummy_image = np.zeros((100, 100, 3), dtype=np.uint8)
             reader.readtext(dummy_image)
             print("EasyOCR reader warmed up successfully.")
@@ -202,7 +200,6 @@ def read_text_from_pdf(pdf_path: str, languages: list[str] = None, num_pages: in
                 img = PILImage.open(io.BytesIO(img_data))
                 
                 # Convert PIL Image to numpy array for EasyOCR
-                import numpy as np
                 img_array = np.array(img)
                 
                 # Extract text using EasyOCR with optimized parameters for Thai
@@ -241,9 +238,7 @@ def read_text_from_pdf(pdf_path: str, languages: list[str] = None, num_pages: in
 
 def main():
     """Entry point for the MCP server"""
-    import sys
-    
-    # Run the MCP server
+    # Run the MCP server with stdio transport
     mcp.run()
 
 

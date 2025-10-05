@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "mcp-vision-remote": {
+      "type": "remote",
+      "url": "https://your-cloud-server.com",
+      "alwaysAllow": [
+        "read_text_from_image",
+        "read_text_from_pdf"
+      ],
+      "timeout": 3600
+    }
+  }
+}

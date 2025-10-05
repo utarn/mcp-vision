@@ -171,7 +171,41 @@ If Claude Desktop is failing to connect to `mcp-vision`:
 - Developer options may need to be enabled in Claude Desktop
 - Depending on the size of the model(s) used, give it a few minutes to download them from HuggingFace on first opening Claude Desktop. Once downloaded, the server will respond and Claude will connect.
 
-On accounts that have web search enabled, Claude will prefer to use web search over local MCP tools AFAIK. Disable web search for best results. 
+### MCP Timeout Error (-32001)
+
+If you encounter an "MCP error -32001: Request timed out" when connecting to the Docker container:
+
+1. **Ensure you're using the latest Docker image** (version 0.1.1 or later):
+   ```bash
+   docker pull utarn/mcp-vision:latest
+   ```
+
+2. **Verify your MCP configuration** uses the correct Docker command:
+   ```json
+   "mcpServers": {
+     "mcp-vision": {
+       "command": "docker",
+       "args": [
+         "run",
+         "-i",
+         "--rm",
+         "utarn/mcp-vision:latest"
+       ]
+     }
+   }
+   ```
+
+3. **Check that the container is running properly**:
+   ```bash
+   docker logs $(docker ps -q --filter "ancestor=utarn/mcp-vision:latest")
+   ```
+
+The timeout issue was caused by improper stdio (standard input/output) handling in the Docker container. This has been fixed in version 0.1.1 by:
+- Ensuring unbuffered Python output with `PYTHONUNBUFFERED=1`
+- Using the correct entry point that properly handles stdio communication
+- Explicitly setting the transport to "stdio" in the MCP server
+
+On accounts that have web search enabled, Claude will prefer to use web search over local MCP tools AFAIK. Disable web search for best results.
 
 ## TODO
 - Host best models online instead of requiring local download

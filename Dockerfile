@@ -17,28 +17,26 @@ ADD . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-editable
 
-# Preload EasyOCR models during build to cache them in the image
-RUN --mount=type=cache,target=/root/.cache/easyocr \
-    .venv/bin/python -c "import easyocr; import numpy as np; print('Downloading and caching EasyOCR models for English and Thai...'); reader = easyocr.Reader(['en', 'th']); print('EasyOCR models downloaded successfully.'); dummy_image = np.zeros((100, 100, 3), dtype=np.uint8); reader.readtext(dummy_image); print('EasyOCR reader warmed up successfully.')"
-
-
 FROM python:3.12-slim-bookworm
 
 WORKDIR /app
 
 COPY --from=uv --chown=app:app /app/.venv /app/.venv
-# Copy EasyOCR model cache if it exists
-RUN mkdir -p /root/.cache && \
-    if [ -d "/app/.venv/root/.cache/easyocr" ]; then \
-        cp -r /app/.venv/root/.cache/easyocr /root/.cache/; \
-    elif [ -d "/root/.cache/easyocr" ]; then \
-        cp -r /root/.cache/easyocr /root/.cache/; \
-    else \
-        echo "EasyOCR cache not found, will download on first run"; \
-    fi
+RUN .venv/bin/python -c "import easyocr; import numpy as np; print('Downloading and caching EasyOCR models for English and Thai...'); reader = easyocr.Reader(['en', 'th']); print('EasyOCR models downloaded successfully.'); dummy_image = np.zeros((100, 100, 3), dtype=np.uint8); reader.readtext(dummy_image); print('EasyOCR reader warmed up successfully.')"
+
+# Install curl for health checks
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 ENV PATH="/app/.venv/bin:$PATH"
+# Ensure unbuffered output for proper stdio communication
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Expose port for HTTP server
+EXPOSE 8080
 
 RUN ls -la /app/.venv/bin
 
-ENTRYPOINT ["mcp-vision"]
+# Use exec form to ensure proper signal handling and stdio
+# Default to HTTP server for cloud deployment
+ENTRYPOINT ["python", "-u", "-c", "from mcp_vision.http_server import main; main()"]
