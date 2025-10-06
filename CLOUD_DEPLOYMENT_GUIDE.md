@@ -131,7 +131,6 @@ Content-Type: application/json
   "tool": "read_text_from_image",
   "arguments": {
     "image_path": "https://example.com/image.jpg",
-    "languages": ["en", "th"],
     "min_confidence": 0.5
   }
 }
@@ -226,8 +225,7 @@ curl -X POST http://localhost:8080/invoke \
   -d '{
     "tool": "read_text_from_image",
     "arguments": {
-      "image_path": "https://example.com/test.jpg",
-      "languages": ["en"]
+      "image_path": "https://example.com/test.jpg"
     }
   }'
 ```
@@ -274,8 +272,7 @@ const response = await fetch('https://your-server.com/invoke', {
   body: JSON.stringify({
     tool: 'read_text_from_image',
     arguments: {
-      image_path: 'https://example.com/document.jpg',
-      languages: ['en', 'th']
+      image_path: 'https://example.com/document.jpg'
     }
   })
 });

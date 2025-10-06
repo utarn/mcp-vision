@@ -21,6 +21,13 @@ services:
     volumes:
       # Optional: Mount volume for persistent cache if needed
       - mcp-vision-cache:/app/.cache
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     networks:
       - mcp-network
 

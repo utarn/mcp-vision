@@ -18,10 +18,7 @@ from mcp_vision.utils import to_mcp_image, MCPImage, load_image
 logger = logging.getLogger(__name__)
 
 global reader
-global current_languages
 reader = None
-current_languages = ['en', 'th']  # Default languages
-
 
 @asynccontextmanager
 async def app_lifespan(server: FastMCP):
@@ -47,11 +44,9 @@ mcp = FastMCP(
 def init_ocr_reader():
     """Initialize the EasyOCR reader"""
     global reader
-    global current_languages
     if reader is None:
         start = time.time()
         reader = easyocr.Reader(['en', 'th'])  # Support English and Thai
-        current_languages = ['en', 'th']
         print(f"Loaded EasyOCR reader in {time.time() - start:.2f} seconds.")
         
         # Warm up the reader with a dummy operation to ensure models are fully loaded
@@ -64,37 +59,15 @@ def init_ocr_reader():
 
 
 @mcp.tool()
-def read_text_from_image(image_path: str, languages: list[str] = None, min_confidence: float = 0.0) -> str:
+def read_text_from_image(image_path: str, min_confidence: float = 0.0) -> str:
     """Extract text from an image using EasyOCR.
 
     Args:
         image_path: path to the image (local file path or URL)
-        languages (optional): list of language codes to recognize (default: ['en', 'th'])
-                           Common codes: 'en' (English), 'th' (Thai)
         min_confidence (optional): minimum confidence threshold for text recognition (default: 0.0)
                                  Use 0.0 to include all recognized text, even low confidence
     """
     init_ocr_reader()
-    
-    if languages is None:
-        languages = ['en', 'th']
-    
-    # Reinitialize reader if different languages are requested
-    global reader
-    global current_languages
-    if set(current_languages) != set(languages):
-        start = time.time()
-        reader = easyocr.Reader(languages)
-        current_languages = languages
-        print(f"Loaded EasyOCR reader with languages {languages} in {time.time() - start:.2f} seconds.")
-        
-        # Warm up the reader
-        try:
-            dummy_image = np.zeros((100, 100, 3), dtype=np.uint8)
-            reader.readtext(dummy_image)
-            print("EasyOCR reader warmed up successfully.")
-        except Exception as e:
-            print(f"Warning: EasyOCR reader warmup failed: {e}")
     
     try:
         # Load the image using the utility function
@@ -133,13 +106,11 @@ def read_text_from_image(image_path: str, languages: list[str] = None, min_confi
 
 
 @mcp.tool()
-def read_text_from_pdf(pdf_path: str, languages: list[str] = None, num_pages: int = None, min_confidence: float = 0.0) -> str:
+def read_text_from_pdf(pdf_path: str, num_pages: int = None, min_confidence: float = 0.0) -> str:
     """Extract text from a PDF file by converting each page to an image and using EasyOCR.
 
     Args:
         pdf_path: path to the PDF file (local file path or URL)
-        languages (optional): list of language codes to recognize (default: ['en', 'th'])
-                           Common codes: 'en' (English), 'th' (Thai)
         num_pages (optional): number of pages to process (default: all pages)
         min_confidence (optional): minimum confidence threshold for text recognition (default: 0.0)
                                  Use 0.0 to include all recognized text, even low confidence
@@ -148,26 +119,6 @@ def read_text_from_pdf(pdf_path: str, languages: list[str] = None, num_pages: in
         Concatenated text from all processed pages
     """
     init_ocr_reader()
-    
-    if languages is None:
-        languages = ['en', 'th']
-    
-    # Reinitialize reader if different languages are requested
-    global reader
-    global current_languages
-    if set(current_languages) != set(languages):
-        start = time.time()
-        reader = easyocr.Reader(languages)
-        current_languages = languages
-        print(f"Loaded EasyOCR reader with languages {languages} in {time.time() - start:.2f} seconds.")
-        
-        # Warm up the reader
-        try:
-            dummy_image = np.zeros((100, 100, 3), dtype=np.uint8)
-            reader.readtext(dummy_image)
-            print("EasyOCR reader warmed up successfully.")
-        except Exception as e:
-            print(f"Warning: EasyOCR reader warmup failed: {e}")
     
     try:
         # Handle URL case

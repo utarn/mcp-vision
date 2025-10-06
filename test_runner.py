@@ -11,16 +11,15 @@ from fastmcp import Client
 from mcp_vision.server import mcp
 
 
-async def test_image_ocr(image_path: str, languages: list[str] = None):
+async def test_image_ocr(image_path: str):
     """Test OCR on an image file"""
     print(f"🖼️  Testing OCR on image: {image_path}")
-    print(f"🌍 Languages: {languages or ['en', 'th']}")
+    print(f"🌍 Languages: English and Thai (default)")
     
     async with Client(mcp) as client:
         try:
             result = await client.call_tool("read_text_from_image", {
-                "image_path": image_path,
-                "languages": languages or ["en", "th"]
+                "image_path": image_path
             })
             
             extracted_text = result.content[0].text if result.content else ""
@@ -37,17 +36,16 @@ async def test_image_ocr(image_path: str, languages: list[str] = None):
             print(f"❌ Error: {e}")
 
 
-async def test_pdf_ocr(pdf_path: str, languages: list[str] = None, num_pages: int = None):
+async def test_pdf_ocr(pdf_path: str, num_pages: int = None):
     """Test OCR on a PDF file"""
     print(f"📄 Testing OCR on PDF: {pdf_path}")
-    print(f"🌍 Languages: {languages or ['en', 'th']}")
+    print(f"🌍 Languages: English and Thai (default)")
     print(f"📖 Pages: {num_pages or 'all'}")
     
     async with Client(mcp) as client:
         try:
             result = await client.call_tool("read_text_from_pdf", {
                 "pdf_path": pdf_path,
-                "languages": languages or ["en", "th"],
                 "num_pages": num_pages
             })
             
@@ -65,16 +63,15 @@ async def test_pdf_ocr(pdf_path: str, languages: list[str] = None, num_pages: in
             print(f"❌ Error: {e}")
 
 
-async def test_image_ocr_with_low_confidence(image_path: str, languages: list[str] = None):
+async def test_image_ocr_with_low_confidence(image_path: str):
     """Test OCR on an image file with low confidence threshold for Thai text"""
     print(f"🔍 Testing OCR with low confidence threshold: {image_path}")
-    print(f"🌍 Languages: {languages or ['en', 'th']}")
+    print(f"🌍 Languages: English and Thai (default)")
     
     async with Client(mcp) as client:
         try:
             result = await client.call_tool("read_text_from_image", {
                 "image_path": image_path,
-                "languages": languages or ["en", "th"],
                 "min_confidence": 0.0  # Include all text, even low confidence
             })
             
@@ -104,25 +101,25 @@ async def main():
     
     # Test image OCR
     if image_path.exists():
-        await test_image_ocr(str(image_path), ["en"])
+        await test_image_ocr(str(image_path))
         print()
     else:
         print(f"⚠️  Sample image not found: {image_path}")
     
     # Test PDF OCR
     if pdf_path.exists():
-        await test_pdf_ocr(str(pdf_path), ["en"], 1)  # Test first page only
+        await test_pdf_ocr(str(pdf_path), 1)  # Test first page only
         print()
     else:
         print(f"⚠️  Sample PDF not found: {pdf_path}")
     
-    # Test with multiple languages
+    # Test with default languages (English and Thai)
     if image_path.exists():
-        print("🌍 Testing with multiple languages (English + Thai)...")
-        await test_image_ocr(str(image_path), ["en", "th"])
+        print("🌍 Testing with default languages (English + Thai)...")
+        await test_image_ocr(str(image_path))
         
         print("\n🔍 Testing Thai extraction with low confidence threshold...")
-        await test_image_ocr_with_low_confidence(str(image_path), ["en", "th"])
+        await test_image_ocr_with_low_confidence(str(image_path))
     
     print("\n✨ Testing completed!")
 

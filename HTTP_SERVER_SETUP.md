@@ -120,7 +120,6 @@ curl -X POST http://localhost:8080/call/read_text_from_image \
   -H "Content-Type: application/json" \
   -d '{
     "image_path": "images/sample.png",
-    "languages": ["en", "th"],
     "min_confidence": 0.0
   }'
 ```
@@ -135,7 +134,6 @@ response = requests.post(
     "http://localhost:8080/call/read_text_from_image",
     json={
         "image_path": "images/sample.png",
-        "languages": ["en", "th"],
         "min_confidence": 0.0
     }
 )

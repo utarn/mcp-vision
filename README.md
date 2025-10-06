@@ -31,6 +31,27 @@ cd mcp-vision
 make build-docker
 ```
 
+### GPU Support with Docker Compose
+
+For enhanced performance with GPU acceleration, you can use Docker Compose:
+
+```bash
+# Start with GPU support (requires NVIDIA drivers and nvidia-container-toolkit)
+docker-compose up --build
+
+# Stop the service
+docker-compose down
+```
+
+For detailed GPU setup instructions, see [GPU_SETUP_GUIDE.md](GPU_SETUP_GUIDE.md).
+
+**Prerequisites for GPU support:**
+- NVIDIA drivers installed on host system
+- nvidia-container-toolkit installed
+- CUDA-compatible GPU
+
+> **Note:** The Docker Compose configuration automatically enables GPU support. If you don't have a GPU or prefer CPU-only mode, comment out the `deploy` section in `docker-compose.yml`.
+
 ## Configuring Claude Desktop
 
 Add this to your `claude_desktop_config.json`:
@@ -83,13 +104,13 @@ through HuggingFace (list for reference [https://huggingface.co/models?pipeline_
 - Returns: MCPImage or None
 
 3. **read_text_from_image**
-- Description: Extract text from images using EasyOCR with support for multiple languages including English and Thai
-- Input: `image_path` (string) URL or file path, `languages` (optional list of language codes, default: ['en', 'th']), `min_confidence` (optional float, default: 0.0)
+- Description: Extract text from images using EasyOCR with support for English and Thai languages
+- Input: `image_path` (string) URL or file path, `min_confidence` (optional float, default: 0.0)
 - Returns: Extracted text as string
 
 4. **read_text_from_pdf**
 - Description: Extract text from PDF files by converting each page to an image and using EasyOCR
-- Input: `pdf_path` (string) URL or file path, `languages` (optional list of language codes, default: ['en', 'th']), `num_pages` (optional int, default: all pages), `min_confidence` (optional float, default: 0.0)
+- Input: `pdf_path` (string) URL or file path, `num_pages` (optional int, default: all pages), `min_confidence` (optional float, default: 0.0)
 - Returns: Concatenated text from all processed pages
 
 
@@ -154,10 +175,35 @@ Run the Docker image locally:
 ```bash
 make run-docker-cpu
 ```
-or 
+or
 ```bash
 make run-docker-gpu
 ```
+
+### Docker Compose Deployment
+
+For production or more complex setups, use Docker Compose:
+
+```bash
+# Build and start with GPU support
+docker-compose up --build
+
+# Build and start without GPU (CPU-only)
+docker-compose -f docker-compose.yml up --build
+
+# View logs
+docker-compose logs -f
+
+# Stop and remove containers
+docker-compose down
+```
+
+The Docker Compose configuration includes:
+- GPU support (configurable)
+- Health checks
+- Persistent cache volume
+- Proper networking
+- Automatic restart policy
 
 [Groundlight Internal] Push the Docker image to Docker Hub (requires DockerHub credentials):
 ```bash

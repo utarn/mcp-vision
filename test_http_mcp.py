@@ -33,7 +33,6 @@ def test_call_tool():
     # Test with a sample image
     test_data = {
         "image_path": "images/sample.png",
-        "languages": ["en", "th"],
         "min_confidence": 0.0
     }
     

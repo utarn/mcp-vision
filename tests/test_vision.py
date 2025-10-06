@@ -36,8 +36,7 @@ class TestVisionTools:
         
         # Test reading text from image
         result = await client.call_tool("read_text_from_image", {
-            "image_path": image_path,
-            "languages": ["en"]
+            "image_path": image_path
         })
         
         # Verify we got a result
@@ -65,7 +64,6 @@ class TestVisionTools:
         # Test reading text from PDF
         result = await client.call_tool("read_text_from_pdf", {
             "pdf_path": pdf_path,
-            "languages": ["en"],
             "num_pages": 1  # Limit to first page for faster testing
         })
         
@@ -83,18 +81,17 @@ class TestVisionTools:
         assert isinstance(extracted_text, str)
 
     @pytest.mark.asyncio
-    async def test_read_text_with_multiple_languages(self, client, sample_files):
-        """Test reading text with multiple languages"""
+    async def test_read_text_with_default_languages(self, client, sample_files):
+        """Test reading text with default languages (en and th)"""
         image_path = str(sample_files["image"])
         
         # Check if sample image exists
         if not os.path.exists(image_path):
             pytest.skip(f"Sample image not found at {image_path}")
         
-        # Test with English and Thai
+        # Test with default languages (English and Thai)
         result = await client.call_tool("read_text_from_image", {
-            "image_path": image_path,
-            "languages": ["en", "th"]
+            "image_path": image_path
         })
         
         # Verify we got a result
@@ -104,7 +101,7 @@ class TestVisionTools:
         # Extract text from result
         extracted_text = result.content[0].text if result.content else ""
         
-        print(f"\nExtracted text with multiple languages:\n{extracted_text}")
+        print(f"\nExtracted text with default languages:\n{extracted_text}")
         
         # Basic validation
         assert isinstance(extracted_text, str)
@@ -156,8 +153,7 @@ async def manual_test():
         print(f"\nTesting image: {image_path}")
         if image_path.exists():
             result = await client.call_tool("read_text_from_image", {
-                "image_path": str(image_path),
-                "languages": ["en"]
+                "image_path": str(image_path)
             })
             print(f"Image result: {result.content[0].text if result.content else 'No content'}")
         else:
@@ -167,7 +163,6 @@ async def manual_test():
         if pdf_path.exists():
             result = await client.call_tool("read_text_from_pdf", {
                 "pdf_path": str(pdf_path),
-                "languages": ["en"],
                 "num_pages": 1
             })
             print(f"PDF result: {result.content[0].text if result.content else 'No content'}")

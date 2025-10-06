@@ -17,15 +17,18 @@ ADD . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-editable
 
-FROM python:3.12-slim-bookworm
+FROM nvidia/cuda:12.9.1-runtime-ubuntu24.04
 
 WORKDIR /app
 
 COPY --from=uv --chown=app:app /app/.venv /app/.venv
 RUN .venv/bin/python -c "import easyocr; import numpy as np; print('Downloading and caching EasyOCR models for English and Thai...'); reader = easyocr.Reader(['en', 'th']); print('EasyOCR models downloaded successfully.'); dummy_image = np.zeros((100, 100, 3), dtype=np.uint8); reader.readtext(dummy_image); print('EasyOCR reader warmed up successfully.')"
 
-# Install curl for health checks
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+# Install curl for health checks and Python
+RUN apt-get update && apt-get install -y curl python3 python3-pip && rm -rf /var/lib/apt/lists/*
+
+# Create symbolic link for python
+RUN ln -s /usr/bin/python3 /usr/bin/python
 
 ENV PATH="/app/.venv/bin:$PATH"
 # Ensure unbuffered output for proper stdio communication
@@ -39,4 +42,4 @@ RUN ls -la /app/.venv/bin
 
 # Use exec form to ensure proper signal handling and stdio
 # Default to HTTP server for cloud deployment
-ENTRYPOINT ["python", "-u", "-c", "from mcp_vision.http_server import main; main()"]
+ENTRYPOINT ["python", "-u", "-m", "mcp_vision.http_server"]
