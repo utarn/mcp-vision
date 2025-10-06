@@ -4,6 +4,7 @@ import logging
 from fastmcp import FastMCP
 
 from mcp_vision.core import init_ocr_reader, read_text_from_image, read_text_from_pdf
+from mcp_vision.cache import get_cache
 
 logger = logging.getLogger(__name__)
 
@@ -29,20 +30,21 @@ mcp = FastMCP(
 
 
 @mcp.tool()
-def read_text_from_image(image_path: str, min_confidence: float = 0.0) -> str:
+def read_text_from_image(image_path: str, min_confidence: float = 0.0, use_cache: bool = True) -> str:
     """Extract text from an image using EasyOCR.
 
     Args:
         image_path: path to the image (local file path or URL)
         min_confidence (optional): minimum confidence threshold for text recognition (default: 0.0)
                                  Use 0.0 to include all recognized text, even low confidence
+        use_cache (optional): whether to use caching (default: True)
     """
     from mcp_vision.core import read_text_from_image as core_read_text_from_image
-    return core_read_text_from_image(image_path, min_confidence)
+    return core_read_text_from_image(image_path, min_confidence, use_cache)
 
 
 @mcp.tool()
-def read_text_from_pdf(pdf_path: str, num_pages: int = None, min_confidence: float = 0.0) -> str:
+def read_text_from_pdf(pdf_path: str, num_pages: int = None, min_confidence: float = 0.0, use_cache: bool = True, batch_size: int = None) -> str:
     """Extract text from a PDF file by converting each page to an image and using EasyOCR.
 
     Args:
@@ -50,12 +52,39 @@ def read_text_from_pdf(pdf_path: str, num_pages: int = None, min_confidence: flo
         num_pages (optional): number of pages to process (default: all pages)
         min_confidence (optional): minimum confidence threshold for text recognition (default: 0.0)
                                  Use 0.0 to include all recognized text, even low confidence
+        use_cache (optional): whether to use caching (default: True)
+        batch_size (optional): number of pages to process simultaneously (default: from BATCH_SIZE env var or 1)
+                             Set to 1 for sequential processing, higher values (e.g., 4) for parallel processing
     
     Returns:
         Concatenated text from all processed pages
     """
     from mcp_vision.core import read_text_from_pdf as core_read_text_from_pdf
-    return core_read_text_from_pdf(pdf_path, num_pages, min_confidence)
+    return core_read_text_from_pdf(pdf_path, num_pages, min_confidence, use_cache, batch_size)
+
+
+@mcp.tool()
+def clear_ocr_cache() -> str:
+    """Clear all cached OCR results"""
+    try:
+        cache = get_cache()
+        cache.clear()
+        return "OCR cache cleared successfully"
+    except Exception as e:
+        logger.error(f"Error clearing cache: {e}")
+        return f"Error clearing cache: {str(e)}"
+
+
+@mcp.tool()
+def get_cache_stats() -> str:
+    """Get statistics about the OCR cache"""
+    try:
+        cache = get_cache()
+        count, size_mb = cache.get_stats()
+        return f"Cache contains {count} entries, occupying {size_mb:.2f} MB"
+    except Exception as e:
+        logger.error(f"Error getting cache stats: {e}")
+        return f"Error getting cache stats: {str(e)}"
 
 
 def main():

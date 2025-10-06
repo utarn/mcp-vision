@@ -109,9 +109,39 @@ through HuggingFace (list for reference [https://huggingface.co/models?pipeline_
 - Returns: Extracted text as string
 
 4. **read_text_from_pdf**
-- Description: Extract text from PDF files by converting each page to an image and using EasyOCR
-- Input: `pdf_path` (string) URL or file path, `num_pages` (optional int, default: all pages), `min_confidence` (optional float, default: 0.0)
+- Description: Extract text from PDF files by converting each page to an image and using EasyOCR. Supports parallel processing of multiple pages simultaneously for faster processing.
+- Input: `pdf_path` (string) URL or file path, `num_pages` (optional int, default: all pages), `min_confidence` (optional float, default: 0.0), `batch_size` (optional int, default: from BATCH_SIZE env var or 1)
 - Returns: Concatenated text from all processed pages
+
+**Batch Processing for PDFs:**
+The `read_text_from_pdf` tool now supports parallel processing of multiple pages simultaneously:
+- Set `batch_size` parameter to control how many pages are processed concurrently
+- Use `BATCH_SIZE` environment variable to set the default batch size globally
+- `batch_size=1` (default): Sequential processing, one page at a time
+- `batch_size=4`: Process 4 pages simultaneously for faster results
+- Higher batch sizes will use more CPU/memory but provide faster processing
+
+Example usage:
+```python
+# Process 4 pages at a time
+result = read_text_from_pdf("document.pdf", batch_size=4)
+
+# Or set via environment variable
+export BATCH_SIZE=4
+```
+
+To configure batch size in Docker:
+```json
+"mcpServers": {
+  "mcp-vision": {
+    "command": "docker",
+    "args": ["run", "-i", "--rm", "mcp-vision"],
+    "env": {
+      "BATCH_SIZE": "4"
+    }
+  }
+}
+```
 
 
 ## Example in blog post and video
