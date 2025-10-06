@@ -10,7 +10,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 
-from mcp_vision.server import mcp, init_ocr_reader
+from mcp_vision.server import mcp
+from mcp_vision.core import init_ocr_reader
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,7 @@
 import logging
 import sys
 
-from mcp_vision.server import mcp
+from .server import mcp
 
 logger = logging.getLogger(__name__)
 
