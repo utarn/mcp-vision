@@ -1,27 +1,8 @@
 {
   "mcpServers": {
-    "context7": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@upstash/context7-mcp"
-      ],
-      "env": {
-        "DEFAULT_MINIMUM_TOKENS": ""
-      },
-      "alwaysAllow": [
-        "resolve-library-id",
-        "get-library-docs"
-      ],
-      "timeout": 60
-    },
     "mcp-vision": {
-      "command": "uv",
-      "args": [
-        "run",
-        "mcp-vision"
-      ],
-      "cwd": "/Users/utarn/projects/mcp-vision",
+      "type": "remote",
+      "url": "http://localhost:8080",
       "alwaysAllow": [
         "read_text_from_pdf",
         "read_text_from_image"

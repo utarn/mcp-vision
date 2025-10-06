@@ -62,27 +62,48 @@ async def health_check():
 async def list_tools():
     """List available MCP tools"""
     try:
+        tools_list = await mcp._list_tools()
+        # Extract only serializable information from tools
         tools = []
-        for tool_name, tool_info in mcp.tools.items():
-            tools.append({
-                "name": tool_name,
-                "description": tool_info.description,
-                "inputSchema": tool_info.input_schema
-            })
+        for tool in tools_list:
+            tool_dict = {
+                "name": tool.name,
+                "description": tool.description if tool.description else ""
+            }
+            
+            # FastMCP tools have the schema in different places
+            # Try to extract it from various possible attributes
+            schema = None
+            if hasattr(tool, 'parameters'):
+                # FunctionTool has parameters
+                schema = tool.parameters
+            elif hasattr(tool, 'input_schema'):
+                schema = tool.input_schema
+            elif hasattr(tool, 'inputSchema'):
+                schema = tool.inputSchema
+            
+            # If we found a schema, use it; otherwise create a basic one
+            if schema:
+                tool_dict["inputSchema"] = schema
+            else:
+                # Fallback to a basic schema
+                tool_dict["inputSchema"] = {
+                    "type": "object",
+                    "properties": {}
+                }
+            
+            tools.append(tool_dict)
         return {"tools": tools}
     except Exception as e:
-        logger.error(f"Error listing tools: {e}")
+        logger.error(f"Error listing tools: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/call/{tool_name}")
 async def call_tool(tool_name: str, arguments: dict[str, Any]):
     """Call an MCP tool by name"""
     try:
-        if tool_name not in mcp.tools:
-            raise HTTPException(status_code=404, detail=f"Tool '{tool_name}' not found")
-        
-        # Call the tool
-        result = await mcp.tools[tool_name].run(**arguments)
+        # Call the tool using FastMCP's _call_tool method
+        result = await mcp._call_tool(tool_name, arguments)
         
         # Convert result to JSON-serializable format
         if hasattr(result, 'content'):
